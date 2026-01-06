@@ -41,28 +41,21 @@ from loguru import logger
 import sys as sys_module
 
 # Configure logging
-if LOGURU_AVAILABLE:
-    logger.remove()  # Remove default handler
-    logger.add(
-        sys_module.stdout,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level="INFO"
-    )
-    # Create logs directory if it doesn't exist
-    Path("logs").mkdir(exist_ok=True)
-    logger.add(
-        "logs/app.log",
-        rotation="100 MB",
-        retention="30 days",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-        level="DEBUG"
-    )
-else:
-    # Fallback to standard logging if loguru not available
-    Path("logs").mkdir(exist_ok=True)
-    file_handler = logging.FileHandler("logs/app.log")
-    file_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)-8s | %(name)s:%(funcName)s:%(lineno)d - %(message)s'))
-    logger.addHandler(file_handler)
+logger.remove()  # Remove default handler
+logger.add(
+    sys_module.stdout,
+    format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
+    level="INFO"
+)
+# Create logs directory if it doesn't exist
+Path("logs").mkdir(exist_ok=True)
+logger.add(
+    "logs/app.log",
+    rotation="100 MB",
+    retention="30 days",
+    format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
+    level="DEBUG"
+)
 
 # Security configuration
 MAX_FILE_SIZE = int(os.getenv("MAX_FILE_SIZE", 100 * 1024 * 1024))  # 100MB default
@@ -797,7 +790,7 @@ async def health_check():
 
 @app.post("/api/upload")
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
-async def upload_firmware(http_request: Request, file: UploadFile = File(...)):
+async def upload_firmware(request: Request, file: UploadFile = File(...)):
     """Upload firmware file (any format: .bin, .hex, .elf, .csv) for analysis - works with or without database"""
     try:
         logger.info(f"File upload request: {file.filename}")
@@ -1015,7 +1008,7 @@ async def upload_firmware(http_request: Request, file: UploadFile = File(...)):
 
 @app.post("/api/analyze", response_model=AnalysisResult)
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
-async def analyze_firmware(http_request: Request, analysis_request: AnalysisRequest):
+async def analyze_firmware(request: Request, analysis_request: AnalysisRequest):
     """Analyze uploaded firmware for tampering - works with or without database"""
     try:
         logger.info(f"Analysis request for firmware_id: {analysis_request.firmware_id}")
@@ -1496,6 +1489,7 @@ async def get_analysis(firmware_id: str):
                         "tampering_probability": analysis.tampering_probability,
                         "model_used": model_used,
                         "features": results.get('features', {}),
+                        "features_analyzed": results.get('features', {}),  # Alias for compatibility
                         "recommendations": results.get('recommendations', []),
                         # Enhanced outputs
                         "tampering_status": "Tampered" if analysis.is_tampered else "Normal",
@@ -1508,7 +1502,11 @@ async def get_analysis(firmware_id: str):
                         "severity_level": forensic_data.get('severity_level'),
                         "severity_score": forensic_data.get('severity_score'),
                         "injection_analysis": forensic_data.get('injection_analysis', {}),
-                        "mitre_classification": forensic_data.get('mitre_classification')
+                        "mitre_classification": forensic_data.get('mitre_classification'),
+                        # Feature contributions and timeline data
+                        "feature_contributions": forensic_data.get('feature_contributions'),
+                        "timeline_data": forensic_data.get('timeline_data'),
+                        "forensic_analysis": forensic_data  # Include full forensic data for compatibility
                     }
             finally:
                 db.close()
@@ -1545,6 +1543,7 @@ async def get_analysis(firmware_id: str):
         "tampering_probability": tampering_prob,
         "model_used": model_used,
         "features": results.get('features', {}) if isinstance(results, dict) else {},
+        "features_analyzed": results.get('features', {}) if isinstance(results, dict) else {},  # Alias for compatibility
         "recommendations": results.get('recommendations', []) if isinstance(results, dict) else [],
         # Enhanced outputs
         "tampering_status": "Tampered" if is_tampered else "Normal",
@@ -1557,12 +1556,16 @@ async def get_analysis(firmware_id: str):
         "severity_level": forensic_data.get('severity_level'),
         "severity_score": forensic_data.get('severity_score'),
         "injection_analysis": forensic_data.get('injection_analysis', {}),
-        "mitre_classification": forensic_data.get('mitre_classification')
+        "mitre_classification": forensic_data.get('mitre_classification'),
+        # Feature contributions and timeline data
+        "feature_contributions": forensic_data.get('feature_contributions'),
+        "timeline_data": forensic_data.get('timeline_data'),
+        "forensic_analysis": forensic_data  # Include full forensic data for compatibility
     }
 
 @app.get("/api/dashboard/stats")
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
-async def get_dashboard_stats(http_request: Request):
+async def get_dashboard_stats(request: Request):
     """Get dashboard statistics - works with or without database - NEVER returns 503"""
     # Default response - always return this on any error
     default_response = {
