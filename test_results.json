@@ -1,0 +1,813 @@
+{
+  "timestamp": "2026-01-05 03:18:41",
+  "total": 161,
+  "passed": 72,
+  "failed": 89,
+  "results": [
+    {
+      "test": "Backend is running (Status: 200)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Data Directory: Clean Drone Firmware Dataset (ID: cfd8be1d-7801-483b-a8c0-37a92e0bae18)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Data Directory: Combined Preprocessed Dataset (ID: 97091851-6852-42b3-8d22-667a8fdf1813)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Data Directory: Tampered Drone Firmware Dataset (ID: dacc04ec-76f0-481d-83f1-bb2989c132ff)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic All Clean V2 (ID: 0d2f2509-05e3-48be-9543-37f9a565200b)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic All Tampered V2 (ID: df6679ab-463a-4a31-9b37-655f83b7996c)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Balanced (ID: 4ab19da7-6b7a-4b12-a50b-6f0f9ff121bd)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Balanced V2 (ID: 0a057462-2f84-48e8-80a5-bab8685a6208)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Clean (ID: a24775c6-abdc-4c1f-9f79-f313418658e9)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Clean V2 (ID: c0aa5a29-1486-4dda-918c-dbdfcb724cec)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Extreme V2 (ID: 8d971d82-64fb-43bc-b2b9-98883283e20c)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Full Features V2 (ID: 982294bb-9826-4b43-b759-fdf5265cee0a)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic High Tampered V2 (ID: cd4f1ca0-99cf-4d4b-be5d-b0db8ffc3bf8)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Imbalanced (ID: ad35523a-e5fa-4fd9-98be-bfc4593e8fc0)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Imbalanced V2 (ID: 49c31176-d95c-4dbb-95a0-74db97a79491)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Large V2 (ID: ffee22ff-7a7c-415e-9ba9-75d973d33928)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Low Tampered V2 (ID: 43137685-8eac-4b6e-9d66-3faa43fd2f88)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Minimal V2 (ID: b7303662-7107-436a-9650-9fbfeda926ac)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Small (ID: a1059894-3379-4961-bce0-3bd0ce5cd46d)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Small V2 (ID: 73530c04-b0a0-4410-a9f9-398a146c4bab)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Tampered (ID: 61f91121-53de-4f36-94df-210b2c640dec)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Tampered V2 (ID: c9daaad6-6659-4103-aec6-595801bb1485)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Test Data: Synthetic Test (ID: 42dc1ab7-7686-45ff-b61b-a52ede28be7c)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Clean Dataset (10% tampered, 50 rows) (ID: c0aa5a29-1486-4dda-918c-dbdfcb724cec)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Tampered Dataset (90% tampered, 50 rows) (ID: c9daaad6-6659-4103-aec6-595801bb1485)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Balanced Dataset (50% tampered, 100 rows) (ID: 0a057462-2f84-48e8-80a5-bab8685a6208)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Imbalanced Dataset (5% tampered, 150 rows) (ID: 49c31176-d95c-4dbb-95a0-74db97a79491)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Small Dataset (5 rows, minimal features) (ID: 73530c04-b0a0-4410-a9f9-398a146c4bab)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Large Dataset (500 rows, full features) (ID: ffee22ff-7a7c-415e-9ba9-75d973d33928)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Extreme Values Dataset (edge cases) (ID: 8d971d82-64fb-43bc-b2b9-98883283e20c)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Minimal Features Dataset (required columns only) (ID: b7303662-7107-436a-9650-9fbfeda926ac)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Full Features Dataset (all columns) (ID: 982294bb-9826-4b43-b759-fdf5265cee0a)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic High Tampered Dataset (95% tampered) (ID: cd4f1ca0-99cf-4d4b-be5d-b0db8ffc3bf8)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic Low Tampered Dataset (2% tampered) (ID: 43137685-8eac-4b6e-9d66-3faa43fd2f88)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic All Clean Dataset (0% tampered) (ID: 0d2f2509-05e3-48be-9543-37f9a565200b)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Uploaded Synthetic All Tampered Dataset (100% tampered) (ID: df6679ab-463a-4a31-9b37-655f83b7996c)",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Retrieved analysis - Injection: True, MITRE: True, Severity: True",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Upload & Train failed: 400 - {\"detail\":\"File already uploaded\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Upload & Train failed: 400 - {\"detail\":\"File already uploaded\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Upload & Train failed: 400 - {\"detail\":\"File already uploaded\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Upload & Train failed: 400 - {\"detail\":\"File already uploaded\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Dashboard stats - Total: 43, Tampered: 7, Clean: 33",
+      "status": "[PASS]",
+      "success": true
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    },
+    {
+      "test": "Analysis failed: 500 - {\"detail\":\"Analysis failed: `np.float_` was removed in the NumPy 2.0 release. Use `np.float64` instead.\"}",
+      "status": "[FAIL]",
+      "success": false
+    }
+  ]
+}
