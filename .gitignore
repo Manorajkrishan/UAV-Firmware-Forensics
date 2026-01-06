@@ -57,6 +57,11 @@ build/
 backend/logs/
 logs/
 
+# Documentation (keep only README.md and HOW_TO_USE.md)
+*.md
+!README.md
+!HOW_TO_USE.md
+
 
 
 
