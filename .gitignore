@@ -23,6 +23,8 @@ data/*.csv
 results/*
 !results/.gitkeep
 evidence/*
+backend/evidence/*
+!backend/evidence/.gitkeep
 
 # Node
 node_modules/
