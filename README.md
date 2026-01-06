@@ -256,7 +256,7 @@ MIT License - See LICENSE file for details
 
 ## 👥 Authors
 
-Drone Firmware Detection Team
+Krishan
 
 ## 🙏 Acknowledgments
 
@@ -278,4 +278,4 @@ For issues and questions:
 
 **Version**: 1.0.0
 
-**Last Updated**: 2024
+**Last Updated**: 2026
