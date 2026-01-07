@@ -52,6 +52,8 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .status-item {
@@ -70,6 +72,27 @@
 
         .status-dot.error {
             background: #dc3545;
+        }
+
+        .health-alert {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .health-alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .health-alert.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
         }
 
         @keyframes pulse {
@@ -583,11 +606,12 @@
                     <div class="model-selector">
                         <label><strong>Select ML Model:</strong></label>
                         <select id="modelSelect">
-                            <option value="ensemble">Ensemble (Recommended)</option>
-                            <option value="random_forest">Random Forest</option>
-                            <option value="isolation_forest">Isolation Forest</option>
-                            <option value="lstm">LSTM</option>
-                            <option value="autoencoder">Autoencoder</option>
+                            <option value="auto">Auto (Recommended - Smart Selection)</option>
+                            <option value="ensemble">Ensemble (Best Accuracy)</option>
+                            <option value="random_forest">Random Forest (Balanced)</option>
+                            <option value="isolation_forest">Isolation Forest (Anomaly Detection)</option>
+                            <option value="lstm">LSTM (Sequential Data)</option>
+                            <option value="autoencoder">Autoencoder (High-Dimensional)</option>
                         </select>
                     </div>
 
@@ -671,7 +695,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = 'http://127.0.0.1:8000'; // Use IPv4 explicitly to avoid IPv6 connection issues
         let selectedFile = null;
         let firmwareId = null;
         let pieChartInstance = null;
@@ -777,19 +801,49 @@
                 formData.append('file', selectedFile);
 
                 updateProgress(30, 'Uploading...');
+                console.log('Uploading file:', selectedFile.name, 'Size:', selectedFile.size);
                 const uploadResponse = await fetch(`${API_BASE}/api/upload`, {
                     method: 'POST',
                     body: formData
                 });
+                console.log('Upload response status:', uploadResponse.status, uploadResponse.statusText);
 
                 if (!uploadResponse.ok) {
-                    throw new Error('Upload failed: ' + uploadResponse.statusText);
+                    // Try to get detailed error message from response
+                    let errorMessage = `Upload failed (${uploadResponse.status}): ${uploadResponse.statusText}`;
+                    try {
+                        // Clone the response so we can read it multiple times
+                        const responseClone = uploadResponse.clone();
+                        const errorData = await responseClone.json();
+                        console.error('Upload error response:', errorData);
+                        if (errorData.detail) {
+                            errorMessage = `Upload failed: ${errorData.detail}`;
+                        } else if (errorData.message) {
+                            errorMessage = `Upload failed: ${errorData.message}`;
+                        } else if (typeof errorData === 'string') {
+                            errorMessage = `Upload failed: ${errorData}`;
+                        }
+                    } catch (e) {
+                        // If JSON parsing fails, try to get text
+                        try {
+                            const responseClone = uploadResponse.clone();
+                            const errorText = await responseClone.text();
+                            console.error('Upload error text:', errorText);
+                            if (errorText) {
+                                errorMessage = `Upload failed: ${errorText.substring(0, 300)}`;
+                            }
+                        } catch (e2) {
+                            console.error('Could not read error response:', e2);
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 const uploadData = await uploadResponse.json();
                 firmwareId = uploadData.firmware_id;
                 updateProgress(50, 'Analyzing...');
 
+                console.log('Calling analyze endpoint with:', { firmware_id: firmwareId, model_preference: model });
                 const analyzeResponse = await fetch(`${API_BASE}/api/analyze`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -798,9 +852,36 @@
                         model_preference: model
                     })
                 });
+                console.log('Analyze response status:', analyzeResponse.status, analyzeResponse.statusText);
 
                 if (!analyzeResponse.ok) {
-                    throw new Error('Analysis failed: ' + analyzeResponse.statusText);
+                    // Try to get detailed error message from response
+                    let errorMessage = `Analysis failed (${analyzeResponse.status}): ${analyzeResponse.statusText}`;
+                    try {
+                        const responseClone = analyzeResponse.clone();
+                        const errorData = await responseClone.json();
+                        console.error('Analyze error response:', errorData);
+                        if (errorData.detail) {
+                            errorMessage = `Analysis failed: ${errorData.detail}`;
+                        } else if (errorData.message) {
+                            errorMessage = `Analysis failed: ${errorData.message}`;
+                        } else if (typeof errorData === 'string') {
+                            errorMessage = `Analysis failed: ${errorData}`;
+                        }
+                    } catch (e) {
+                        // If JSON parsing fails, try to get text
+                        try {
+                            const responseClone = analyzeResponse.clone();
+                            const errorText = await responseClone.text();
+                            console.error('Analyze error text:', errorText);
+                            if (errorText) {
+                                errorMessage = `Analysis failed: ${errorText.substring(0, 300)}`;
+                            }
+                        } catch (e2) {
+                            console.error('Could not read analyze error response:', e2);
+                        }
+                    }
+                    throw new Error(errorMessage);
                 }
 
                 updateProgress(90, 'Finalizing...');
@@ -817,7 +898,15 @@
                 }, 500);
 
             } catch (error) {
-                showAlert('Error: ' + error.message, 'error');
+                // Show detailed error message
+                let errorMsg = error.message || 'Unknown error occurred';
+                console.error('Upload/Analysis error:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    name: error.name
+                });
+                showAlert('Error: ' + errorMsg, 'error');
                 progressBar.style.display = 'none';
                 analyzeBtn.disabled = false;
             }
@@ -965,33 +1054,71 @@
         }
 
         // History
+        let allHistoryData = [];
         async function loadHistory() {
             try {
                 const response = await fetch(`${API_BASE}/api/analyses`);
                 const data = await response.json();
+                allHistoryData = data;
 
-                const historyContent = document.getElementById('historyContent');
-                if (data.length > 0) {
-                    historyContent.innerHTML = data.map(a => `
-                        <div class="file-item" onclick="showAnalysisView('${a.firmware_id}')">
-                            <div>
-                                <strong>${a.file_name || 'Unknown'}</strong><br>
-                                <small>ID: ${a.firmware_id}</small><br>
-                                <small>${a.upload_date || 'N/A'}</small>
-                            </div>
-                            <div>
-                                <span class="badge ${a.is_tampered ? 'tampered' : a.is_tampered === false ? 'clean' : 'pending'}">
-                                    ${a.is_tampered ? 'Tampered' : a.is_tampered === false ? 'Clean' : 'Pending'}
-                                </span>
-                                ${a.tampering_probability ? `<br><small>${(a.tampering_probability * 100).toFixed(1)}%</small>` : ''}
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    historyContent.innerHTML = '<p style="text-align: center; color: #6c757d;">No history available.</p>';
-                }
+                renderHistory(data);
             } catch (error) {
                 console.error('History load error:', error);
+                document.getElementById('historyContent').innerHTML = '<p style="text-align: center; color: #6c757d;">Error loading history.</p>';
+            }
+        }
+
+        function renderHistory(data) {
+            const historyContent = document.getElementById('historyContent');
+            if (data.length > 0) {
+                historyContent.innerHTML = data.map(a => `
+                    <div class="file-item" onclick="showAnalysisView('${a.firmware_id}')">
+                        <div>
+                            <strong>${a.file_name || 'Unknown'}</strong><br>
+                            <small>ID: ${a.firmware_id}</small><br>
+                            <small>${a.upload_date ? new Date(a.upload_date).toLocaleString() : 'N/A'}</small><br>
+                            <small>Model: ${a.model_used || 'N/A'}</small>
+                        </div>
+                        <div style="text-align: right;">
+                            <span class="badge ${a.is_tampered ? 'tampered' : a.is_tampered === false ? 'clean' : 'pending'}">
+                                ${a.is_tampered ? 'Tampered' : a.is_tampered === false ? 'Clean' : 'Pending'}
+                            </span>
+                            ${a.tampering_probability ? `<br><small style="display: block; margin-top: 5px;">${(a.tampering_probability * 100).toFixed(1)}%</small>` : ''}
+                            ${(a.analysis_status === 'pending' || a.analysis_status === 'failed') ? `
+                                <br><button class="btn btn-small" onclick="event.stopPropagation(); retryAnalysis('${a.firmware_id}')" style="margin-top: 5px; padding: 5px 10px; font-size: 0.85em;">Retry</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                historyContent.innerHTML = '<p style="text-align: center; color: #6c757d;">No history available.</p>';
+            }
+        }
+
+        function filterHistory() {
+            const searchTerm = document.getElementById('historySearch').value.toLowerCase();
+            const filtered = allHistoryData.filter(a => 
+                (a.file_name || '').toLowerCase().includes(searchTerm) ||
+                (a.firmware_id || '').toLowerCase().includes(searchTerm)
+            );
+            renderHistory(filtered);
+        }
+
+        async function retryAnalysis(firmwareId) {
+            if (!confirm('Retry analysis for this firmware?')) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/api/analyses/${firmwareId}/retry?model_preference=ensemble`, {
+                    method: 'POST'
+                });
+                if (response.ok) {
+                    showAlert('Analysis retry started successfully', 'success');
+                    setTimeout(() => loadHistory(), 2000);
+                } else {
+                    throw new Error('Retry failed');
+                }
+            } catch (error) {
+                showAlert('Failed to retry analysis: ' + error.message, 'error');
             }
         }
 
@@ -1547,12 +1674,32 @@
 
         function showAlert(message, type) {
             const alertDiv = document.getElementById('uploadAlert');
+            if (!alertDiv) {
+                console.error('Alert div not found, creating one...');
+                // Create alert div if it doesn't exist
+                const newAlert = document.createElement('div');
+                newAlert.id = 'uploadAlert';
+                newAlert.className = `alert ${type}`;
+                newAlert.textContent = message;
+                newAlert.style.cssText = 'padding: 15px; margin: 20px 0; border-radius: 5px; display: block; position: fixed; top: 20px; right: 20px; z-index: 10000; max-width: 500px;';
+                document.body.appendChild(newAlert);
+                setTimeout(() => {
+                    newAlert.remove();
+                }, 10000); // Show for 10 seconds for errors
+                return;
+            }
             alertDiv.className = `alert ${type}`;
             alertDiv.textContent = message;
             alertDiv.style.display = 'block';
+            // Show errors longer
+            const timeout = type === 'error' ? 10000 : 5000;
             setTimeout(() => {
                 alertDiv.style.display = 'none';
-            }, 5000);
+            }, timeout);
+            // Also log to console
+            if (type === 'error') {
+                console.error('Error alert:', message);
+            }
         }
 
         // Check backend status every 10 seconds

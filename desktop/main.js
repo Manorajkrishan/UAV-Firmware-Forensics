@@ -10,11 +10,15 @@ let frontendProcess = null
 
 // Backend server configuration
 const BACKEND_PORT = 8000
-const BACKEND_HOST = 'localhost'
+const BACKEND_HOST = '127.0.0.1' // Use IPv4 explicitly to avoid IPv6 connection issues
 
 // Path to backend
 const BACKEND_PATH = path.join(__dirname, '..', 'backend', 'main.py')
-const PYTHON_EXECUTABLE = process.platform === 'win32' ? 'python' : 'python3'
+// Try to use virtual environment Python if available, otherwise use system Python
+const venvPython = process.platform === 'win32' 
+  ? path.join(__dirname, '..', '.venv', 'Scripts', 'python.exe')
+  : path.join(__dirname, '..', '.venv', 'bin', 'python3')
+const PYTHON_EXECUTABLE = fs.existsSync(venvPython) ? venvPython : (process.platform === 'win32' ? 'python' : 'python3')
 
 function createWindow() {
   // Create the browser window
@@ -111,10 +115,73 @@ function checkPythonDependencies() {
   })
 }
 
+// Check if backend is already running
+function checkBackendRunning() {
+  return new Promise((resolve) => {
+    const http = require('http')
+    const req = http.get(`http://${BACKEND_HOST}:${BACKEND_PORT}/health`, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        if (res.statusCode === 200) {
+          try {
+            const healthData = JSON.parse(data)
+            console.log(`[OK] Backend is already running on port 8000 (status: ${healthData.status || 'unknown'})`)
+            resolve(true)
+          } catch {
+            console.log('[OK] Backend is already running on port 8000')
+            resolve(true)
+          }
+        } else {
+          console.log(`[INFO] Backend health check returned status ${res.statusCode}`)
+          resolve(false)
+        }
+      })
+    })
+    req.on('error', (err) => {
+      console.log(`[INFO] Backend health check failed: ${err.message}`)
+      resolve(false)
+    })
+    req.setTimeout(5000, () => {
+      req.destroy()
+      console.log('[INFO] Backend health check timed out')
+      resolve(false)
+    })
+  })
+}
+
 // Start backend server
 function startBackend() {
-  return new Promise((resolve, reject) => {
-    console.log('Starting backend server...')
+  return new Promise(async (resolve, reject) => {
+    // Initialize backendReady flag
+    let backendReady = false
+    
+    // First check if backend is already running (with retry for slow startup)
+    console.log('Checking if backend is already running on port 8000...')
+    let alreadyRunning = await checkBackendRunning()
+    
+    // If not running, wait a bit and check again (in case it's still starting)
+    if (!alreadyRunning) {
+      console.log('Backend not detected. Waiting 2 seconds and checking again...')
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      alreadyRunning = await checkBackendRunning()
+    }
+    
+    // One more check after another short wait
+    if (!alreadyRunning) {
+      console.log('Backend still not detected. Waiting 1 more second...')
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      alreadyRunning = await checkBackendRunning()
+    }
+    
+    if (alreadyRunning) {
+      console.log('[OK] Using existing backend server on port 8000')
+      backendReady = true
+      resolve()
+      return
+    }
+
+    console.log('No existing backend found. Starting new backend server...')
     console.log(`Python: ${PYTHON_EXECUTABLE}`)
     console.log(`Backend: ${BACKEND_PATH}`)
 
@@ -132,7 +199,7 @@ function startBackend() {
       shell: process.platform === 'win32',
     })
 
-    let backendReady = false
+    // backendReady is already declared at the top of the function (line 157)
     let healthCheckInterval = null
     
     // Start periodic health checks after 15 seconds (give backend time to load models)
@@ -222,6 +289,45 @@ function startBackend() {
     backendProcess.stderr.on('data', (data) => {
       const output = data.toString()
       
+      // Check for port conflict error first - but only if backend is NOT already ready
+      // If backend is already running, ignore port conflict messages (they might be from shutdown or retry)
+      if (!backendReady && (output.includes('error while attempting to bind') || 
+          output.includes('only one usage of each socket address') ||
+          output.includes('WinError 10048') ||
+          output.includes('Address already in use'))) {
+        console.log('[INFO] Port 8000 conflict detected. Checking if backend is already running...')
+        // Don't treat this as a fatal error immediately - check if backend is actually running
+        setTimeout(async () => {
+          const isRunning = await checkBackendRunning()
+          if (isRunning) {
+            console.log('[OK] Backend is already running on port 8000, will use existing instance')
+            if (!backendReady) {
+              backendReady = true
+              clearTimeout(timeout)
+              clearTimeout(startHealthChecks)
+              if (healthCheckInterval) clearInterval(healthCheckInterval)
+              // Don't kill the process, just resolve - backend is already running
+              resolve()
+            }
+          } else {
+            console.error(`[Backend Error] Port conflict: ${output.trim()}`)
+            console.error('Port 8000 is in use by another application.')
+            console.error('Please close the application using port 8000 or restart your computer.')
+            // Don't reject here - let the exit handler check again
+          }
+        }, 3000) // Wait 3 seconds to give backend time to fully start
+        return
+      }
+      
+      // If backend is already ready, ignore port conflict messages (they might be from shutdown or retry)
+      if (backendReady && (output.includes('error while attempting to bind') || 
+          output.includes('only one usage of each socket address') ||
+          output.includes('WinError 10048'))) {
+        // Backend is already running successfully, ignore these messages
+        console.log(`[Backend Info] Ignoring port conflict message (backend is already running): ${output.trim()}`)
+        return
+      }
+      
       // Filter out TensorFlow/TensorFlow info messages (they're not errors)
       const isInfoMessage = output.includes('tensorflow') || 
                            output.includes('oneDNN') || 
@@ -231,7 +337,8 @@ function startBackend() {
                            output.includes('INFO:') ||
                            output.includes('Started server process') ||
                            output.includes('Uvicorn running') ||
-                           output.includes('Application startup complete')
+                           output.includes('Application startup complete') ||
+                           output.includes('Application shutdown complete') // Don't treat shutdown as error if backend was ready
       
       if (isInfoMessage) {
         // Log as info instead of error
@@ -263,8 +370,40 @@ function startBackend() {
       clearTimeout(startHealthChecks)
       if (healthCheckInterval) clearInterval(healthCheckInterval)
       console.log(`Backend process exited with code ${code}`)
-      if (code !== 0 && code !== null) {
-        console.error('Backend crashed!')
+      if (code !== 0 && code !== null && !backendReady) {
+        // Check if it's a port conflict - give it a moment then check if backend is actually running
+        console.log('[INFO] Backend process exited. Checking if backend is already running on port 8000...')
+        setTimeout(async () => {
+          const isRunning = await checkBackendRunning()
+          if (isRunning) {
+            console.log('[OK] Backend is actually running (port conflict was from previous instance)')
+            if (!backendReady) {
+              backendReady = true
+              clearTimeout(timeout)
+              resolve()
+            }
+          } else {
+            console.error('Backend crashed! Port 8000 may be in use by another application.')
+            if (!backendReady) {
+              reject(new Error('Port 8000 is already in use. Please close the application using port 8000 or restart your computer.'))
+            }
+          }
+        }, 3000) // Wait 3 seconds to check
+      } else if (code === 0 || backendReady) {
+        // Backend exited normally or was already ready
+        console.log('[OK] Backend process completed')
+        // Even if backend exited, check if another instance is running
+        if (!backendReady) {
+          setTimeout(async () => {
+            const isRunning = await checkBackendRunning()
+            if (isRunning) {
+              console.log('[OK] Found existing backend instance, using it')
+              backendReady = true
+              clearTimeout(timeout)
+              resolve()
+            }
+          }, 1000)
+        }
       }
     })
   })

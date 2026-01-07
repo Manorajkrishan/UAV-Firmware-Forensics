@@ -276,6 +276,85 @@ MODEL_ACCURACIES = {
     'xgboost': 0.9600         # 96.00% - Strong gradient boosting
 }
 
+def select_best_model(df: pd.DataFrame, available_models: list = None) -> str:
+    """
+    Automatically select the best ML model based on dataset characteristics.
+    
+    Selection criteria:
+    - LSTM: Best for sequential/time-series data, larger datasets (>1000 rows)
+    - Random Forest: Good for general classification, handles mixed data types well
+    - Isolation Forest: Best for anomaly detection, works well with outliers
+    - Autoencoder: Good for anomaly detection, high-dimensional data
+    - Ensemble: Best overall accuracy, use when accuracy is critical (default)
+    
+    Args:
+        df: DataFrame with firmware data
+        available_models: List of available model names (default: all in models_cache)
+    
+    Returns:
+        Recommended model name
+    """
+    if available_models is None:
+        available_models = list(models_cache.keys())
+    
+    # Remove 'scaler', 'selector', 'encoders', 'autoencoder_threshold', 'autoencoder_max_error' from available
+    available_models = [m for m in available_models if m not in ['scaler', 'selector', 'encoders', 'autoencoder_threshold', 'autoencoder_max_error']]
+    
+    if not available_models:
+        return 'ensemble'  # Fallback
+    
+    dataset_size = len(df)
+    num_features = len(df.columns)
+    
+    # Analyze data characteristics
+    has_sequential_features = any(col in df.columns for col in ['boot_time_ms', 'emulated_syscalls', 'timestamp'])
+    has_high_entropy = 'entropy_score' in df.columns and df['entropy_score'].mean() > 7.0
+    has_outliers = False
+    if 'entropy_score' in df.columns:
+        q1 = df['entropy_score'].quantile(0.25)
+        q3 = df['entropy_score'].quantile(0.75)
+        iqr = q3 - q1
+        outliers = ((df['entropy_score'] < (q1 - 1.5 * iqr)) | (df['entropy_score'] > (q3 + 1.5 * iqr))).sum()
+        has_outliers = outliers > len(df) * 0.1  # More than 10% outliers
+    
+    # Model selection logic
+    print(f"\n[MODEL_SELECTION] Analyzing dataset characteristics...")
+    print(f"  - Dataset size: {dataset_size} rows")
+    print(f"  - Number of features: {num_features}")
+    print(f"  - Has sequential features: {has_sequential_features}")
+    print(f"  - High entropy detected: {has_high_entropy}")
+    print(f"  - Has outliers: {has_outliers}")
+    
+    # Priority 1: Large dataset with sequential features -> LSTM
+    if dataset_size > 1000 and has_sequential_features and 'lstm' in available_models:
+        print(f"[MODEL_SELECTION] Selected: LSTM (large dataset with sequential features)")
+        return 'lstm'
+    
+    # Priority 2: High entropy or many outliers -> Isolation Forest or Autoencoder
+    if (has_high_entropy or has_outliers) and 'isolation_forest' in available_models:
+        print(f"[MODEL_SELECTION] Selected: Isolation Forest (anomaly detection for high entropy/outliers)")
+        return 'isolation_forest'
+    
+    # Priority 3: High-dimensional data -> Autoencoder
+    if num_features > 20 and 'autoencoder' in available_models:
+        print(f"[MODEL_SELECTION] Selected: Autoencoder (high-dimensional data)")
+        return 'autoencoder'
+    
+    # Priority 4: Medium dataset -> Random Forest (faster than ensemble)
+    if 100 <= dataset_size <= 1000 and 'random_forest' in available_models:
+        print(f"[MODEL_SELECTION] Selected: Random Forest (medium dataset, balanced performance)")
+        return 'random_forest'
+    
+    # Priority 5: Default to Ensemble (best accuracy)
+    if 'ensemble' in available_models:
+        print(f"[MODEL_SELECTION] Selected: Ensemble (best overall accuracy)")
+        return 'ensemble'
+    
+    # Fallback to first available model
+    selected = available_models[0]
+    print(f"[MODEL_SELECTION] Selected: {selected} (fallback)")
+    return selected
+
 def load_models():
     """Load all ML models into cache"""
     global models_cache, MODELS_DIR
@@ -530,7 +609,7 @@ class FirmwareUploadResponse(BaseModel):
 
 class AnalysisRequest(BaseModel):
     firmware_id: str
-    model_preference: Optional[str] = "ensemble"  # ensemble, lstm, autoencoder, random_forest
+    model_preference: Optional[str] = "auto"  # auto, ensemble, lstm, autoencoder, random_forest, isolation_forest
 
 class TrainingRequest(BaseModel):
     dataset_path: str
@@ -837,8 +916,16 @@ async def upload_firmware(request: Request, file: UploadFile = File(...)):
         
         # Save original file
         original_file_path = EVIDENCE_DIR / f"{firmware_id}_{safe_filename}"
-        with open(original_file_path, "wb") as f:
-            f.write(content)
+        try:
+            EVIDENCE_DIR.mkdir(parents=True, exist_ok=True)
+            with open(original_file_path, "wb") as f:
+                f.write(content)
+            logger.info(f"Saved file to: {original_file_path} (size: {file_size} bytes)")
+        except Exception as e:
+            logger.error(f"Failed to save file: {e}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Failed to save uploaded file: {str(e)}")
         
         # Parse firmware file (converts .bin/.hex/.elf to CSV if needed)
         try:
@@ -854,7 +941,39 @@ async def upload_firmware(request: Request, file: UploadFile = File(...)):
                 print(f"[OK] Converted to CSV: {csv_file_path}")
             else:
                 # Already CSV, just read it
-                df = pd.read_csv(original_file_path)
+                try:
+                    logger.info(f"Reading CSV file: {original_file_path}")
+                    # Try reading with UTF-8 first
+                    df = pd.read_csv(original_file_path, encoding='utf-8', on_bad_lines='skip', low_memory=False)
+                    # Remove any completely empty rows
+                    df = df.dropna(how='all')
+                    logger.info(f"Successfully read CSV: {len(df)} rows, {len(df.columns)} columns")
+                    logger.info(f"CSV columns: {list(df.columns)}")
+                except UnicodeDecodeError as ude:
+                    # Try with different encodings
+                    try:
+                        logger.info("Trying to read CSV with latin-1 encoding...")
+                        df = pd.read_csv(original_file_path, encoding='latin-1', on_bad_lines='skip', low_memory=False)
+                        # Remove any completely empty rows
+                        df = df.dropna(how='all')
+                        logger.info(f"Successfully read CSV with latin-1: {len(df)} rows, {len(df.columns)} columns")
+                    except Exception as e2:
+                        logger.error(f"Failed to read CSV with multiple encodings: {e2}")
+                        import traceback
+                        traceback.print_exc()
+                        raise HTTPException(status_code=400, detail=f"Failed to read CSV file. Please ensure it's a valid CSV file with UTF-8 or Latin-1 encoding: {str(e2)}")
+                except pd.errors.EmptyDataError:
+                    raise HTTPException(status_code=400, detail="CSV file is empty")
+                except pd.errors.ParserError as pe:
+                    logger.error(f"CSV parsing error: {pe}")
+                    import traceback
+                    traceback.print_exc()
+                    raise HTTPException(status_code=400, detail=f"CSV file has formatting errors. Please check the file format: {str(pe)}")
+                except Exception as e:
+                    logger.error(f"Failed to read CSV file: {e}")
+                    import traceback
+                    traceback.print_exc()
+                    raise HTTPException(status_code=400, detail=f"Failed to read CSV file: {str(e)}")
                 file_path = original_file_path
         except Exception as e:
             import traceback
@@ -909,9 +1028,46 @@ async def upload_firmware(request: Request, file: UploadFile = File(...)):
         if df.empty:
             raise HTTPException(status_code=400, detail="CSV file is empty")
         
+        # Validate data types for required columns
+        try:
+            logger.info(f"Validating data types. DataFrame shape: {df.shape}, columns: {list(df.columns)}")
+            # Ensure numeric columns are numeric
+            numeric_cols = ['entropy_score', 'boot_time_ms', 'emulated_syscalls']
+            for col in numeric_cols:
+                if col in df.columns:
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                    # Check for NaN values after conversion
+                    nan_count = df[col].isna().sum()
+                    if nan_count > 0:
+                        logger.warning(f"Column {col} has {nan_count} NaN values, filling with median")
+                        median_val = df[col].median()
+                        if pd.isna(median_val):
+                            median_val = 0  # Fallback to 0 if all values are NaN
+                        df[col] = df[col].fillna(median_val)
+            
+            # Ensure is_signed is binary (0 or 1)
+            if 'is_signed' in df.columns:
+                df['is_signed'] = pd.to_numeric(df['is_signed'], errors='coerce').fillna(0).astype(int)
+                # Ensure values are 0 or 1
+                df['is_signed'] = df['is_signed'].clip(0, 1).astype(int)
+            
+            logger.info(f"Data validation complete. DataFrame shape: {df.shape}")
+        except Exception as e:
+            logger.error(f"Error validating data types: {e}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=400, detail=f"Error validating CSV data types: {str(e)}")
+        
         # Calculate file hash (using SHA256 for better security)
-        import hashlib
-        file_hash = hashlib.sha256(content).hexdigest()
+        try:
+            import hashlib
+            file_hash = hashlib.sha256(content).hexdigest()
+            logger.info(f"File hash calculated: {file_hash[:16]}...")
+        except Exception as e:
+            logger.error(f"Error calculating file hash: {e}")
+            import traceback
+            traceback.print_exc()
+            raise HTTPException(status_code=500, detail=f"Error calculating file hash: {str(e)}")
         
         # Try to save to database if available
         db_saved = False
@@ -975,8 +1131,16 @@ async def upload_firmware(request: Request, file: UploadFile = File(...)):
                 "tampering_probability": None,
                 "model_used": None
             }
-            save_file_metadata(metadata)
-            print(f"[OK] Saved to file storage: {firmware_id}")
+            try:
+                save_file_metadata(metadata)
+                logger.info(f"Saved metadata to file storage: {firmware_id}")
+                print(f"[OK] Saved to file storage: {firmware_id}")
+            except Exception as e:
+                logger.error(f"Failed to save metadata: {e}")
+                import traceback
+                traceback.print_exc()
+                # Don't fail the upload if metadata save fails
+                print(f"[WARNING] Failed to save metadata, but upload succeeded: {e}")
         
         # Save to MongoDB for detailed logs (optional)
         if mongodb_db is not None:
@@ -1003,15 +1167,46 @@ async def upload_firmware(request: Request, file: UploadFile = File(...)):
         raise
     except Exception as e:
         import traceback
+        error_trace = traceback.format_exc()
+        error_detail = str(e)
+        error_type = type(e).__name__
+        
+        # Log to both logger and console
+        logger.error(f"Upload failed with exception ({error_type}): {error_detail}")
+        logger.error(f"Traceback: {error_trace}")
+        print(f"[ERROR] Upload failed: {error_type}: {error_detail}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        
+        # Provide more detailed error message
+        if "No such file or directory" in error_detail or "Permission denied" in error_detail:
+            error_detail = f"File system error: {error_detail}. Please check file permissions and disk space."
+        elif "MemoryError" in error_detail or "out of memory" in error_detail.lower():
+            error_detail = f"File too large to process: {error_detail}. Try a smaller file."
+        elif "pandas" in error_detail.lower() or "read_csv" in error_detail.lower() or "UnicodeDecodeError" in error_detail:
+            error_detail = f"CSV parsing error: {error_detail}. Please ensure the CSV file is valid and properly formatted."
+        elif "required columns" in error_detail.lower() or "missing" in error_detail.lower():
+            error_detail = f"Data validation error: {error_detail}"
+        elif "KeyError" in error_type:
+            error_detail = f"Data structure error: {error_detail}. The CSV file may be missing required columns."
+        elif "AttributeError" in error_type:
+            error_detail = f"Data processing error: {error_detail}. Please check the CSV file format."
+        
+        # Include error type in response for better debugging
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Upload failed ({error_type}): {error_detail}"
+        )
 
 @app.post("/api/analyze", response_model=AnalysisResult)
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
 async def analyze_firmware(request: Request, analysis_request: AnalysisRequest):
     """Analyze uploaded firmware for tampering - works with or without database"""
     try:
-        logger.info(f"Analysis request for firmware_id: {analysis_request.firmware_id}")
+        print(f"\n{'='*60}")
+        print(f"[ANALYZE] Starting analysis for firmware_id: {analysis_request.firmware_id}")
+        print(f"[ANALYZE] Model preference: {analysis_request.model_preference}")
+        print(f"{'='*60}\n")
+        logger.info(f"Analysis request for firmware_id: {analysis_request.firmware_id}, model: {analysis_request.model_preference}")
         
         # Get firmware record from database or file storage
         analysis_data = None
@@ -1059,11 +1254,40 @@ async def analyze_firmware(request: Request, analysis_request: AnalysisRequest):
         # Load firmware data
         try:
             print(f"Loading firmware data from: {evidence_path}")
-            df = pd.read_csv(evidence_path)
-            print(f"[OK] Loaded {len(df)} rows, {len(df.columns)} columns")
+            print(f"File exists: {Path(evidence_path).exists()}")
+            if not Path(evidence_path).exists():
+                raise HTTPException(status_code=404, detail=f"Evidence file not found: {evidence_path}")
+            
+            # Use same CSV reading approach as upload endpoint
+            try:
+                df = pd.read_csv(evidence_path, encoding='utf-8', on_bad_lines='skip', low_memory=False)
+                df = df.dropna(how='all')  # Remove completely empty rows
+                print(f"[OK] Loaded {len(df)} rows, {len(df.columns)} columns")
+                print(f"CSV columns: {list(df.columns)}")
+            except UnicodeDecodeError:
+                # Fallback to latin-1 encoding
+                print(f"[WARNING] UTF-8 decode failed, trying latin-1...")
+                df = pd.read_csv(evidence_path, encoding='latin-1', on_bad_lines='skip', low_memory=False)
+                df = df.dropna(how='all')
+                print(f"[OK] Loaded {len(df)} rows with latin-1 encoding")
+        except pd.errors.EmptyDataError:
+            print(f"[ERROR] CSV file is empty: {evidence_path}")
+            raise HTTPException(status_code=400, detail=f"CSV file is empty: {Path(evidence_path).name}")
+        except pd.errors.ParserError as pe:
+            print(f"[ERROR] CSV parsing error: {pe}")
+            raise HTTPException(status_code=400, detail=f"CSV parsing error: {str(pe)}. Please check the file format.")
         except Exception as e:
-            print(f"[WARNING] Failed to load CSV: {e}")
-            raise HTTPException(status_code=500, detail=f"Failed to load firmware data from {evidence_path}: {str(e)}")
+            import traceback
+            error_trace = traceback.format_exc()
+            error_type = type(e).__name__
+            print(f"[ERROR] Failed to load CSV ({error_type}): {e}")
+            print(f"Traceback: {error_trace}")
+            logger.error(f"Failed to load CSV ({error_type}): {e}")
+            logger.error(f"Traceback: {error_trace}")
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to load firmware data from {evidence_path} ({error_type}): {str(e)}"
+            )
         
         if df.empty:
             print(f"[WARNING] CSV file is empty: {evidence_path}")
@@ -1075,19 +1299,32 @@ async def analyze_firmware(request: Request, analysis_request: AnalysisRequest):
         # Preprocess
         try:
             print(f"Preprocessing firmware data...")
+            print(f"DataFrame shape: {df.shape}, columns: {list(df.columns)}")
             features = preprocess_firmware_data(df)
             print(f"[OK] Preprocessing completed, feature shape: {features.shape}")
         except Exception as e:
             import traceback
-            print(f"[WARNING] Preprocessing failed: {e}")
+            error_trace = traceback.format_exc()
+            error_type = type(e).__name__
+            print(f"[ERROR] Preprocessing failed ({error_type}): {e}")
+            print(f"Traceback: {error_trace}")
             traceback.print_exc()
+            logger.error(f"Preprocessing failed ({error_type}): {e}")
+            logger.error(f"Traceback: {error_trace}")
             raise HTTPException(
                 status_code=400, 
-                detail=f"Preprocessing failed: {str(e)}. Please ensure the CSV file has all required columns (entropy_score, is_signed, boot_time_ms, emulated_syscalls, etc.)"
+                detail=f"Preprocessing failed ({error_type}): {str(e)}. Please ensure the CSV file has all required columns (entropy_score, is_signed, boot_time_ms, emulated_syscalls, etc.). Available columns: {list(df.columns)}"
             )
         
         # Predict with selected model
         model_name = analysis_request.model_preference
+        
+        # Auto-select best model if "auto" is specified or if model_preference is None/empty
+        if model_name in [None, "", "auto", "automatic"]:
+            print(f"[ANALYZE] Auto-selecting best model based on dataset characteristics...")
+            model_name = select_best_model(df, list(models_cache.keys()))
+            print(f"[ANALYZE] Auto-selected model: {model_name}")
+        
         if model_name not in models_cache:
             # Try to find a fallback model
             if 'ensemble' in models_cache:
@@ -1105,9 +1342,21 @@ async def analyze_firmware(request: Request, analysis_request: AnalysisRequest):
                 )
         
         try:
+            print(f"Predicting with model: {model_name}")
             result = predict_with_model(model_name, features)
+            print(f"[OK] Prediction completed successfully")
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Prediction failed: {str(e)}")
+            import traceback
+            error_trace = traceback.format_exc()
+            error_type = type(e).__name__
+            logger.error(f"Prediction failed ({error_type}): {str(e)}")
+            logger.error(f"Traceback: {error_trace}")
+            print(f"[ERROR] Prediction failed: {error_type}: {str(e)}")
+            traceback.print_exc()
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Prediction failed ({error_type}): {str(e)}"
+            )
         
         # Extract key features for reporting
         key_features = {
@@ -1356,6 +1605,9 @@ async def analyze_firmware(request: Request, analysis_request: AnalysisRequest):
             forensic_results['severity_score'] = result['probability']
             print(f"[OK] Calculated severity level: {severity_level} (from probability: {result['probability']:.4f})")
         
+        # Determine if model was auto-selected
+        model_selection_method = "auto" if analysis_request.model_preference in [None, "", "auto", "automatic"] else "manual"
+        
         return AnalysisResult(
             firmware_id=analysis_request.firmware_id,
             is_tampered=result['is_tampered'],
@@ -1392,8 +1644,35 @@ async def analyze_firmware(request: Request, analysis_request: AnalysisRequest):
         raise
     except Exception as e:
         import traceback
+        error_trace = traceback.format_exc()
+        error_detail = str(e)
+        error_type = type(e).__name__
+        
+        # Log to both logger and console
+        logger.error(f"Analysis failed with exception ({error_type}): {error_detail}")
+        logger.error(f"Traceback: {error_trace}")
+        print(f"[ERROR] Analysis failed: {error_type}: {error_detail}")
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        
+        # Provide more detailed error message
+        if "KeyError" in error_type:
+            error_detail = f"Data structure error: {error_detail}. The CSV file may be missing required columns or features."
+        elif "AttributeError" in error_type:
+            error_detail = f"Data processing error: {error_detail}. Please check the CSV file format and required columns."
+        elif "ValueError" in error_type:
+            error_detail = f"Data validation error: {error_detail}. Please check the data values in your CSV file."
+        elif "IndexError" in error_type:
+            error_detail = f"Data indexing error: {error_detail}. The CSV file may be empty or malformed."
+        elif "models_cache" in error_detail.lower() or "model" in error_detail.lower():
+            error_detail = f"ML model error: {error_detail}. Please ensure models are loaded correctly."
+        elif "preprocess" in error_detail.lower() or "scaler" in error_detail.lower():
+            error_detail = f"Data preprocessing error: {error_detail}. Please check the CSV file format."
+        
+        # Include error type in response for better debugging
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Analysis failed ({error_type}): {error_detail}"
+        )
 
 @app.get("/api/analyses")
 async def get_analyses(skip: int = 0, limit: int = 100):
@@ -1462,16 +1741,21 @@ async def get_analyses(skip: int = 0, limit: int = 100):
 @app.get("/api/analyses/{firmware_id}")
 async def get_analysis(firmware_id: str):
     """Get specific analysis - works with or without database"""
-    # Try database first
-    if SessionLocal is not None:
-        try:
-            db = SessionLocal()
+    try:
+        print(f"\n{'='*60}")
+        print(f"[GET_ANALYSIS] Fetching analysis for firmware_id: {firmware_id}")
+        print(f"{'='*60}\n")
+        
+        # Try database first
+        if SessionLocal is not None:
             try:
-                analysis = db.query(FirmwareAnalysis).filter(
-                    FirmwareAnalysis.firmware_id == firmware_id
-                ).first()
-                if analysis:
-                    results = json.loads(analysis.analysis_results) if analysis.analysis_results else {}
+                db = SessionLocal()
+                try:
+                    analysis = db.query(FirmwareAnalysis).filter(
+                        FirmwareAnalysis.firmware_id == firmware_id
+                    ).first()
+                    if analysis:
+                        results = json.loads(analysis.analysis_results) if analysis.analysis_results else {}
                     model_used = analysis.model_used or 'ensemble'
                     # Always use current MODEL_ACCURACIES, not stored value (which might be outdated)
                     model_accuracy = MODEL_ACCURACIES.get(model_used.lower(), 0.0)
@@ -1508,60 +1792,97 @@ async def get_analysis(firmware_id: str):
                         "timeline_data": forensic_data.get('timeline_data'),
                         "forensic_analysis": forensic_data  # Include full forensic data for compatibility
                     }
-            finally:
-                db.close()
+                finally:
+                    db.close()
+            except Exception as e:
+                print(f"Database query failed, trying file storage: {e}")
+        
+        # Fallback to file storage
+        metadata = load_file_metadata()
+        file_data = metadata.get(firmware_id)
+        if not file_data:
+            raise HTTPException(status_code=404, detail="Analysis not found")
+        
+        results = file_data.get('analysis_results', {})
+        if isinstance(results, str):
+            try:
+                results = json.loads(results)
+            except json.JSONDecodeError as e:
+                print(f"[ERROR] Failed to parse analysis_results JSON: {e}")
+                results = {}
+        
+        is_tampered = file_data.get("is_tampered", False)
+        tampering_prob = file_data.get("tampering_probability", 0.0)
+        model_used = file_data.get("model_used", "ensemble")
+        # Always use current MODEL_ACCURACIES, not stored value (which might be outdated or 1.0)
+        model_accuracy = MODEL_ACCURACIES.get(model_used.lower() if model_used else 'ensemble', 0.0)
+        # If stored accuracy exists and is different, log it but use current
+        stored_accuracy = results.get('model_accuracy') if isinstance(results, dict) else None
+        if stored_accuracy is not None and abs(stored_accuracy - model_accuracy) > 0.01:
+            print(f"Note: Stored accuracy ({stored_accuracy}) differs from current ({model_accuracy}) for {model_used}")
+        
+        forensic_data = {}
+        try:
+            if isinstance(results, dict) and isinstance(results.get('forensic_analysis'), dict):
+                forensic_data = results.get('forensic_analysis', {})
+            elif isinstance(results, dict) and 'forensic_analysis' in results:
+                # Try to parse if it's a string
+                forensic_str = results.get('forensic_analysis')
+                if isinstance(forensic_str, str):
+                    try:
+                        forensic_data = json.loads(forensic_str)
+                    except:
+                        forensic_data = {}
         except Exception as e:
-            print(f"Database query failed, trying file storage: {e}")
+            print(f"[WARNING] Error extracting forensic_data: {e}")
+            forensic_data = {}
+        
+        return {
+            "firmware_id": firmware_id,
+            "file_name": file_data.get("file_name", ""),
+            "upload_date": file_data.get("upload_date", ""),
+            "analysis_status": file_data.get("analysis_status", "pending"),
+            "is_tampered": is_tampered,
+            "tampering_probability": tampering_prob,
+            "model_used": model_used,
+            "features": results.get('features', {}) if isinstance(results, dict) else {},
+            "features_analyzed": results.get('features', {}) if isinstance(results, dict) else {},  # Alias for compatibility
+            "recommendations": results.get('recommendations', []) if isinstance(results, dict) else [],
+            # Enhanced outputs
+            "tampering_status": "Tampered" if is_tampered else "Normal",
+            "confidence_score": abs((tampering_prob or 0) - 0.5) * 2 * 100,
+            "anomaly_score": results.get('anomaly_score', tampering_prob) if isinstance(results, dict) else tampering_prob,
+            "tampering_type": results.get('tampering_type') if isinstance(results, dict) else None,
+            "time_window": results.get('time_window') if isinstance(results, dict) else None,
+            "model_accuracy": model_accuracy,  # Always use current accuracy, not stored
+            # Forensic and injection data
+            "severity_level": forensic_data.get('severity_level'),
+            "severity_score": forensic_data.get('severity_score'),
+            "injection_analysis": forensic_data.get('injection_analysis', {}),
+            "mitre_classification": forensic_data.get('mitre_classification'),
+            # Feature contributions and timeline data
+            "feature_contributions": forensic_data.get('feature_contributions') if isinstance(forensic_data, dict) else None,
+            "timeline_data": forensic_data.get('timeline_data') if isinstance(forensic_data, dict) else None,
+            "forensic_analysis": forensic_data  # Include full forensic data for compatibility
+        }
     
-    # Fallback to file storage
-    metadata = load_file_metadata()
-    file_data = metadata.get(firmware_id)
-    if not file_data:
-        raise HTTPException(status_code=404, detail="Analysis not found")
-    
-    results = file_data.get('analysis_results', {})
-    if isinstance(results, str):
-        results = json.loads(results)
-    
-    is_tampered = file_data.get("is_tampered", False)
-    tampering_prob = file_data.get("tampering_probability", 0.0)
-    model_used = file_data.get("model_used", "ensemble")
-    # Always use current MODEL_ACCURACIES, not stored value (which might be outdated or 1.0)
-    model_accuracy = MODEL_ACCURACIES.get(model_used.lower() if model_used else 'ensemble', 0.0)
-    # If stored accuracy exists and is different, log it but use current
-    stored_accuracy = results.get('model_accuracy') if isinstance(results, dict) else None
-    if stored_accuracy is not None and abs(stored_accuracy - model_accuracy) > 0.01:
-        print(f"Note: Stored accuracy ({stored_accuracy}) differs from current ({model_accuracy}) for {model_used}")
-    
-    forensic_data = results.get('forensic_analysis', {}) if isinstance(results, dict) and isinstance(results.get('forensic_analysis'), dict) else {}
-    return {
-        "firmware_id": firmware_id,
-        "file_name": file_data.get("file_name", ""),
-        "upload_date": file_data.get("upload_date", ""),
-        "analysis_status": file_data.get("analysis_status", "pending"),
-        "is_tampered": is_tampered,
-        "tampering_probability": tampering_prob,
-        "model_used": model_used,
-        "features": results.get('features', {}) if isinstance(results, dict) else {},
-        "features_analyzed": results.get('features', {}) if isinstance(results, dict) else {},  # Alias for compatibility
-        "recommendations": results.get('recommendations', []) if isinstance(results, dict) else [],
-        # Enhanced outputs
-        "tampering_status": "Tampered" if is_tampered else "Normal",
-        "confidence_score": abs((tampering_prob or 0) - 0.5) * 2 * 100,
-        "anomaly_score": results.get('anomaly_score', tampering_prob) if isinstance(results, dict) else tampering_prob,
-        "tampering_type": results.get('tampering_type') if isinstance(results, dict) else None,
-        "time_window": results.get('time_window') if isinstance(results, dict) else None,
-        "model_accuracy": model_accuracy,  # Always use current accuracy, not stored
-        # Forensic and injection data
-        "severity_level": forensic_data.get('severity_level'),
-        "severity_score": forensic_data.get('severity_score'),
-        "injection_analysis": forensic_data.get('injection_analysis', {}),
-        "mitre_classification": forensic_data.get('mitre_classification'),
-        # Feature contributions and timeline data
-        "feature_contributions": forensic_data.get('feature_contributions'),
-        "timeline_data": forensic_data.get('timeline_data'),
-        "forensic_analysis": forensic_data  # Include full forensic data for compatibility
-    }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        error_trace = traceback.format_exc()
+        error_type = type(e).__name__
+        error_detail = str(e)
+        
+        print(f"[ERROR] get_analysis failed ({error_type}): {error_detail}")
+        print(f"Traceback: {error_trace}")
+        logger.error(f"get_analysis failed ({error_type}): {error_detail}")
+        logger.error(f"Traceback: {error_trace}")
+        
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to retrieve analysis ({error_type}): {error_detail}"
+        )
 
 @app.get("/api/dashboard/stats")
 @limiter.limit(f"{RATE_LIMIT_PER_MINUTE}/minute")
@@ -1737,7 +2058,7 @@ async def train_models(request: TrainingRequest):
         raise HTTPException(status_code=500, detail=f"Training failed: {str(e)}")
 
 @app.post("/api/analyses/{firmware_id}/retry")
-async def retry_analysis(firmware_id: str, model_preference: str = Query("ensemble", description="ML model to use for analysis")):
+async def retry_analysis(firmware_id: str, model_preference: str = Query("auto", description="ML model to use for analysis (use 'auto' for automatic selection)")):
     """Retry analysis for a pending or failed firmware"""
     try:
         print(f"\n{'='*50}")
