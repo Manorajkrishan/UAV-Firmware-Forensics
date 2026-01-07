@@ -893,8 +893,9 @@
                     progressBar.style.display = 'none';
                     analyzeBtn.disabled = false;
                     loadDashboard();
-                    // Show detailed analysis view
-                    showAnalysisView(firmwareId);
+                    // Don't automatically show detailed view - let user click "View Detailed Report" button
+                    // This prevents 500 error if the detailed view endpoint has issues
+                    // showAnalysisView(firmwareId);
                 }, 500);
 
             } catch (error) {
@@ -1125,8 +1126,38 @@
         // Show detailed analysis view
         async function showAnalysisView(firmwareId) {
             try {
+                console.log(`[showAnalysisView] Fetching analysis for: ${firmwareId}`);
                 const response = await fetch(`${API_BASE}/api/analyses/${firmwareId}`);
+                console.log(`[showAnalysisView] Response status: ${response.status}`);
+                
+                if (!response.ok) {
+                    // Try to get detailed error message
+                    let errorMessage = `Failed to load detailed analysis (${response.status}): ${response.statusText}`;
+                    try {
+                        const responseClone = response.clone();
+                        const errorData = await responseClone.json();
+                        if (errorData.detail) {
+                            errorMessage = `Failed to load detailed analysis: ${errorData.detail}`;
+                        }
+                    } catch (e) {
+                        try {
+                            const responseClone = response.clone();
+                            const errorText = await responseClone.text();
+                            if (errorText) {
+                                errorMessage = `Failed to load detailed analysis: ${errorText.substring(0, 200)}`;
+                            }
+                        } catch (e2) {
+                            console.error('Could not read error response:', e2);
+                        }
+                    }
+                    console.error(`[showAnalysisView] Error: ${errorMessage}`);
+                    showAlert(errorMessage, 'error');
+                    // Don't hide the main view if detailed view fails - user can still see basic results
+                    return;
+                }
+                
                 const analysis = await response.json();
+                console.log(`[showAnalysisView] Analysis loaded successfully`);
                 currentAnalysis = analysis;
 
                 document.getElementById('mainView').style.display = 'none';
@@ -1134,7 +1165,9 @@
 
                 renderAnalysisView(analysis);
             } catch (error) {
-                showAlert('Error loading analysis: ' + error.message, 'error');
+                console.error(`[showAnalysisView] Exception:`, error);
+                showAlert('Error loading detailed analysis: ' + error.message, 'error');
+                // Don't hide the main view if there's an error - user can still see basic results
             }
         }
 
